@@ -1,0 +1,13 @@
+{
+  "name": "rideau-canal-dashboard",
+  "version": "1.0.0",
+  "description": "Web dashboard for real-time Rideau Canal safety monitoring.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "redis": "^4.6.14"
+  }
+}

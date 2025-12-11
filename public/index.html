@@ -1,22 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rideau Canal Safety Monitor</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Rideau Canal Dashboard</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <header>
-        <h1>Rideau Canal Live Safety Status</h1>
-    </header>
 
-    <main id="dashboard-container">
-    </main>
+<h1>Rideau Canal Ice Monitoring Dashboard</h1>
 
-    <script src="app.js"></script>
+<div class="controls">
+    <button id="refreshBtn">Refresh Now</button>
+    <label>
+        <input type="checkbox" id="autoRefresh">
+        Auto Refresh (10s)
+    </label>
+</div>
+
+<div id="statusBox"></div>
+
+<table id="dataTable">
+    <thead>
+        <tr>
+            <th>Location</th>
+            <th>Timestamp</th>
+            <th>Avg Ice</th>
+            <th>Surface Temp</th>
+            <th>Snow</th>
+            <th>External Temp</th>
+            <th>Safety</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script src="app.js"></script>
 </body>
-
 </html>

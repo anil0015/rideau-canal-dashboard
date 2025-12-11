@@ -1,70 +1,57 @@
-// Server: Connects to Redis and serves data to the web page
 const express = require('express');
-const redis = require('redis');
-const path = require('path');
+const cors = require('cors');
+const { CosmosClient } = require('@azure/cosmos');
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+app.use(cors());
+app.use(express.json());
 
-// --- Redis Configuration ---
-const REDIS_HOST = 'localhost';
-const REDIS_PORT = 6379;
-const AGGREGATION_KEY_PREFIX = 'AGGREGATION:';
-const LOCATIONS = ["DowsLake", "FifthAvenue", "NAC"];
+// ---- Cosmos Settings ----
+const endpoint = "YOUR_COSMOS_ENDPOINT";
+const key = "YOUR_COSMOS_KEY";
 
-// Create Redis Client
-const client = redis.createClient({
-    host: REDIS_HOST,
-    port: REDIS_PORT
-});
+const client = new CosmosClient({ endpoint, key });
 
-client.on('error', (err) => {
-    console.error('Redis Client Error:', err);
-    process.exit(1); 
-});
+const databaseId = "RideauCanalDB";
+const containerId = "SensorAggregations";
 
-// Connect to Redis
-(async () => {
+// ---- API ROUTES ----
+
+// Get all items (last 50)
+app.get('/api/data', async (req, res) => {
     try {
-        await client.connect();
-        console.log('Connection successful to local Redis server.');
-    } catch (e) {
-        // Error handling is managed by the 'error' event listener
-    }
-})();
+        const container = client.database(databaseId).container(containerId);
 
+        const query = {
+            query: "SELECT * FROM c ORDER BY c.window_end DESC OFFSET 0 LIMIT 50"
+        };
 
-// --- API Endpoint (Core Requirement) ---
-// This endpoint pulls the LATEST safety data from the Redis Hashes
-app.get('/api/latest', async (req, res) => {
-    const data = {};
-
-    try {
-        const fetchPromises = LOCATIONS.map(location => 
-            client.hGetAll(AGGREGATION_KEY_PREFIX + location)
-        );
-
-        const results = await Promise.all(fetchPromises);
-
-        // Map results back to location names
-        results.forEach((result, index) => {
-            if (Object.keys(result).length > 0) {
-                data[LOCATIONS[index]] = result;
-            }
-        });
-        
-        // Send the compiled data
-        res.json(data);
-    } catch (error) {
-        console.error('Error fetching data from Redis:', error);
-        res.status(500).json({ error: 'Failed to retrieve real-time data.' });
+        const { resources } = await container.items.query(query).fetchAll();
+        res.json(resources);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to fetch data" });
     }
 });
 
+// Get by location
+app.get('/api/data/:location', async (req, res) => {
+    try {
+        const container = client.database(databaseId).container(containerId);
 
-// --- Static File Hosting ---
-app.use(express.static(path.join(__dirname, 'public')));
+        const query = {
+            query: "SELECT * FROM c WHERE c.location = @loc ORDER BY c.window_end DESC",
+            parameters: [{ name: "@loc", value: req.params.location }]
+        };
 
-// Start the server
-app.listen(PORT, () => {
-    console.log(`Dashboard server running at http://localhost:${PORT}`);
+        const { resources } = await container.items.query(query).fetchAll();
+        res.json(resources);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to fetch data" });
+    }
 });
+
+app.listen(3000, () =>
+    console.log("Server running on http://localhost:3000")
+);
